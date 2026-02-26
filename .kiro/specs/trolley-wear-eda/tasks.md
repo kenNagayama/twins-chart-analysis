@@ -51,19 +51,19 @@
 
 ---
 
-- [ ] 4. ノイズフィルタリング機能の実装
-- [ ] 4.1 移動中央値フィルタの実装
+- [x] 4. ノイズフィルタリング機能の実装
+- [x] 4.1 移動中央値フィルタの実装
   - pandas の rolling API を使って指定ウィンドウ幅の移動中央値を計算する機能を実装する
   - `min_periods=1`, `center=True` を設定してデータ端部でも途切れない連続波形を返す
   - _Requirements: 4.1, 4.3_
 
-- [ ] 4.2 Savitzky-Golayフィルタの実装
+- [x] 4.2 Savitzky-Golayフィルタの実装
   - `scipy.signal.savgol_filter` を使って指定ウィンドウ幅・多項式次数でフィルタリングする機能を実装する
   - 呼び出し前に `window > polyorder` であることを確認し、条件違反時はエラーを明示する
   - ウィンドウ幅は ParameterValidator で奇数補正済みの値を受け取ることを前提とする
   - _Requirements: 4.2, 4.4_
 
-- [ ] 4.3 フィルタ適用順序制御と ON/OFF 切り替えの実装
+- [x] 4.3 フィルタ適用順序制御と ON/OFF 切り替えの実装
   - FilterConfig（median_enabled, savgol_enabled フラグ）に従い、移動中央値 → Savitzky-Golay の順でフィルタを適用する機能を実装する
   - 両方 OFF の場合は入力データをそのまま返す
   - 元データと処理後データを保持した結果オブジェクトを返す
