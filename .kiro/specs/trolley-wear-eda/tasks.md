@@ -2,13 +2,13 @@
 
 ## タスク一覧
 
-- [ ] 1. プロジェクト環境のセットアップ
-- [ ] 1.1 依存パッケージの定義と仮想環境構築
+- [x] 1. プロジェクト環境のセットアップ
+- [x] 1.1 依存パッケージの定義と仮想環境構築
   - `pyproject.toml` を作成し、pandas 2.x、NumPy 1.26+、SciPy 1.17.1、Plotly 6.5.0、Streamlit、openpyxl を依存として記述する
   - `uv sync` で仮想環境を構築し、`uv run streamlit run app.py` で起動できることを確認する
   - _Requirements: 1.1_
 
-- [ ] 1.2 ディレクトリ構造とエントリポイントの骨格作成
+- [x] 1.2 ディレクトリ構造とエントリポイントの骨格作成
   - `src/` ディレクトリに各コンポーネントの空モジュールファイル（`data_loader.py`, `noise_filter.py`, `signal_analyzer.py`, `anomaly_detector.py`, `visualizer.py`）を作成する
   - `app.py` を Streamlit アプリのエントリポイントとして作成する（起動のみ確認できる最小実装）
   - `output/` ディレクトリを HTML 出力先として用意する
