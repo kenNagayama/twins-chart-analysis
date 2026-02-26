@@ -1,0 +1,26 @@
+*.js
+!jest.config.js
+*.d.ts
+node_modules
+
+# CDK output
+cdk.out
+
+# CDK context (can be committed if desired)
+# !cdk.context.json
+
+# Compiled outputs
+*.js.map
+
+# OS
+.DS_Store
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# local
+local/
+data/
