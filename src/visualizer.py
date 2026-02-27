@@ -443,6 +443,85 @@ class Visualizer:
         )
         return template
 
+    def plot_anomaly_overlay(
+        self,
+        series: pd.Series,
+        kilometric_series: pd.Series,
+        anomaly_result: "AnomalyResult",
+        config: VisualizerConfig,
+    ) -> go.Figure:
+        """摩耗波形に異常点マーカーをオーバーレイしたグラフを生成する。
+
+        AnomalyDetector が返した異常点インデックスを使って、グラフ上の
+        該当データポイントをマーカーでハイライト表示する。
+        ハイライトには閾値超過点のキロ程値を示す。
+
+        Args:
+            series: 摩耗値 Series（フィルタリング済みまたは生データ）
+            kilometric_series: キロ程値の Series
+            anomaly_result: AnomalyResult（異常点インデックス・キロ程を含む）
+            config: Visualizer 設定
+
+        Returns:
+            摩耗波形 + 異常点マーカーを含む go.Figure
+
+        Requirements: 5.5
+        """
+        fig = go.Figure()
+
+        # ベース波形トレース
+        fig.add_trace(
+            go.Scatter(
+                x=kilometric_series.values,
+                y=series.values,
+                mode="lines",
+                name="摩耗波形",
+                line=dict(color="steelblue", width=1),
+                hovertemplate=(
+                    "キロ程: %{x:.3f} m<br>"
+                    "残存直径: %{y:.3f} mm<extra></extra>"
+                ),
+            )
+        )
+
+        # 異常点マーカートレース（異常点が存在する場合のみ追加）
+        anomaly_idx = anomaly_result.anomaly_indices
+        if len(anomaly_idx) > 0:
+            # 異常点の摩耗値とキロ程を取得
+            anomaly_wear = series.loc[anomaly_idx]
+            anomaly_kilo = kilometric_series.reindex(anomaly_idx)
+
+            fig.add_trace(
+                go.Scatter(
+                    x=anomaly_kilo.values,
+                    y=anomaly_wear.values,
+                    mode="markers",
+                    name=f"異常点（閾値 ±{anomaly_result.threshold}）",
+                    marker=dict(
+                        color="red",
+                        size=8,
+                        symbol="circle-open",
+                        line=dict(width=2),
+                    ),
+                    hovertemplate=(
+                        "【異常点】<br>"
+                        "キロ程: %{x:.3f} m<br>"
+                        "残存直径: %{y:.3f} mm<extra></extra>"
+                    ),
+                )
+            )
+
+        # レイアウト設定
+        fig.update_layout(
+            title=f"摩耗波形 異常点ハイライト（Z-Score 閾値 ±{anomaly_result.threshold}）",
+            xaxis_title="キロ程 (m)",
+            yaxis_title="残存直径 (mm)",
+            font=dict(family="Meiryo, sans-serif"),
+            height=config.default_height_px,
+        )
+
+        return fig
+
     def export_html(
         self,
         fig: go.Figure,
