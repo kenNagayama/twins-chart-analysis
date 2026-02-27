@@ -9,5 +9,8 @@
     "allow": [],
     "deny": []
   },
-  "language": "Japanese"
+  "language": "Japanese",
+  "enabledPlugins": {
+    "deploy-on-aws@agent-plugins-for-aws": true
+  }
 }
