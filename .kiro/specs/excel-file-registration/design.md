@@ -37,7 +37,7 @@
 2. `LoadError` の場合は `st.error()` → `st.stop()`
 3. 成功時は `df` を取得し、サイドバーウィジェット定義 → パイプライン実行
 
-本機能追加後は、サイドバー UI 定義がデータ取得の前に来る必要がある（データソース選択 → ファイルアップロード UI → データ取得 → 分析パラメータ UI → パイプライン実行）。
+本機能追加後は、**サイドバーの全ウィジェット定義をデータ取得より前に配置する**（サイドバー全UI定義〔データソース選択 + ファイルアップロード UI + 分析パラメータ UI〕 → データ取得 → エラー処理／`st.stop()` → パイプライン実行）。この順序により、ファイル未選択・エラー時でも分析パラメータウィジェットが常に表示される（要件 4.4）。
 
 既存の依存関係ルール（`app.py` → `src/` 全モジュール）は変更されない。`DataLoader` の変更は不要。
 
@@ -235,7 +235,8 @@ sequenceDiagram
 **実装ノート**
 - 統合: サイドバーの既存ヘッダー（`st.sidebar.header("分析パラメータ")`）の前に、データソース選択ブロックを追加する。サイドバーの順序は「データソース選択 → ファイルアップロードウィジェット（条件付き） → 分析パラメータ」とする。
 - バリデーション: ファイルアップロードウィジェットの `type=["xlsx"]` はブラウザ側フィルタに過ぎないため、サーバー側の検証は `DataLoader.load_from_upload()` が担う。
-- リスク: `st.stop()` はスクリプト実行を中断するため、エラーメッセージ表示の後に呼び出すこと。`st.stop()` より後に記述されたウィジェット定義（分析パラメータウィジェット等）は表示されない点に注意する。このため、分析パラメータウィジェットはデータ取得成功後に定義する順序とする。
+- 実装順序: サイドバーウィジェット（データソース選択 → ファイルアップロード UI → 分析パラメータ UI）を **すべてサイドバーコンテキスト内でデータ取得前に定義**する。その後メインコンテキストでデータ取得を行い、エラー時は `st.error()` → `st.stop()` の順で呼び出す。これにより `st.stop()` 以降にサイドバーウィジェットが残り、常に表示される。
+- リスク: `st.stop()` はスクリプト実行を中断するため、必ずエラーメッセージ表示の後に呼び出すこと。
 
 ---
 
@@ -261,7 +262,7 @@ sequenceDiagram
 ##### サービスインターフェース
 
 ```python
-@st.cache_data
+@st.cache_data(hash_funcs={UploadedFile: lambda f: f.file_id})
 def load_uploaded_data(file_obj: UploadedFile) -> pd.DataFrame | LoadError:
     """UploadedFile から DataFrame を読み込む（キャッシュ付き）。
 
@@ -281,7 +282,7 @@ def load_uploaded_data(file_obj: UploadedFile) -> pd.DataFrame | LoadError:
 **実装ノート**
 - 統合: `app.py` のモジュールトップレベルに `load_data()` と並列に定義する
 - バリデーション: 拡張子チェック・列検証はすべて `DataLoader.load_from_upload()` に委譲する
-- リスク: Streamlit の将来バージョンで `UploadedFile` のハッシュ化仕様が変更された場合、`@st.cache_data(hash_funcs={UploadedFile: lambda f: f.file_id})` のように明示指定が必要になる可能性がある
+- キャッシュキー: `UploadedFile` のハッシュ化は初期実装から `hash_funcs` を明示指定し、不確実性を排除する。`@st.cache_data(hash_funcs={UploadedFile: lambda f: f.file_id})` を使用すること。
 
 ---
 
