@@ -12,7 +12,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
+
+from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 from src.anomaly_detector import AnomalyDetector
 from src.data_loader import DataLoader, LoadError
@@ -59,6 +62,20 @@ def load_data(file_path: str):
     """Excelファイルを読み込み DataFrame を返す（キャッシュ付き）。"""
     loader = DataLoader()
     return loader.load(file_path)
+
+
+@st.cache_data(hash_funcs={UploadedFile: lambda f: f.file_id})
+def load_uploaded_data(file_obj: UploadedFile) -> pd.DataFrame | LoadError:
+    """UploadedFile から DataFrame を読み込む（キャッシュ付き）。
+
+    Args:
+        file_obj: アップロードウィジェットが返す UploadedFile オブジェクト
+
+    Returns:
+        成功時: 必須10列を含む pd.DataFrame
+        失敗時: LoadError（kind は "invalid_format" / "missing_columns" / "read_error" のいずれか）
+    """
+    return DataLoader().load_from_upload(file_obj, file_obj.name)
 
 
 # ─────────────────────────────────────────────
