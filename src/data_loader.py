@@ -77,6 +77,9 @@ class DataLoader:
                 message=f"ファイルの読み込みに失敗しました: {exc}",
             )
 
+        # 列名の正規化: 全角「ＣＨ」→ 半角「CH」
+        df = df.rename(columns={"ＣＨ": "CH"})
+
         # 列検証（要件 1.2）
         validation_error = self.validate_columns(df)
         if validation_error is not None:

@@ -21,6 +21,11 @@ cdk.out
 *.swp
 *.swo
 
+# Python
+__pycache__/
+*.pyc
+
 # local
 local/
 data/
+output/
