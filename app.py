@@ -291,6 +291,15 @@ stft_result = analyzer.compute_stft(filter_result.filtered, window_size)
 visualizer = Visualizer()
 viz_config = VisualizerConfig(output_dir="output", default_height_px=400)
 
+# ─────────────────────────────────────────────
+# タスク 4.2: 現在使用中のデータソースをメインエリアに表示する
+# ─────────────────────────────────────────────
+
+if data_source == "アップロードファイルを使用":
+    st.caption(f"現在使用中のデータソース: {uploaded_file.name}")
+else:
+    st.caption("現在使用中のデータソース: デフォルトデータ")
+
 # ─ セクション1: CH別摩耗チャート ──────────────────
 
 st.header("CH別 摩耗チャート")
