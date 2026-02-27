@@ -52,20 +52,20 @@
   - タスク 2 の実装完了後に独立して作業できる。タスク 6 とは別ファイル（`tests/test_excel_file_registration.py`）を操作するため競合しない
   - _Requirements: 2.1, 2.3, 2.4, 4.2, 1.6, 5.1_
 
-- [ ] 6. パイプライン統合テストと DataLoader 既存テストの動作確認を実装する
-- [ ] 6.1 アップロードデータ経由のフルパイプライン統合テストを実装する
+- [x] 6. パイプライン統合テストと DataLoader 既存テストの動作確認を実装する
+- [x] 6.1 アップロードデータ経由のフルパイプライン統合テストを実装する
   - アップロードされた DataFrame が NoiseFilter に正しく渡されることを検証する
   - アップロードデータでフルパイプライン（NoiseFilter → AnomalyDetector → SignalAnalyzer → Visualizer）が完走することを検証する
   - `LoadError` が `app.py` のエラーハンドリングフローに正しく伝播することを検証する
   - タスク 4 の実装完了後に作業する
   - _Requirements: 4.1, 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 6.2 既存パラメータウィジェットの動作が変更されていないことを確認するテストを実装する
+- [x] 6.2 既存パラメータウィジェットの動作が変更されていないことを確認するテストを実装する
   - ファイルアップロード機能追加前後でウィンドウ幅・Z-Score 閾値・フィルタトグルのウィジェット動作が変化しないことを検証する
   - タスク 4 の実装完了後、`tests/test_app.py` を拡張して実施する
   - _Requirements: 4.4_
 
-- [ ]* 6.3 DataLoader 既存テストのカバレッジを確認する
+- [x] 6.3 DataLoader 既存テストのカバレッジを確認する
   - `tests/test_data_loader.py` の `TestLoadFromUploadInvalidFormat` と `TestLoadFromUploadValidFile` が引き続きパスすることを確認する（`uv run pytest tests/test_data_loader.py`）
   - 設計書で DataLoader の変更不要と確認済みのため、既存テストが変更なしにパスすれば対応完了とする
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
