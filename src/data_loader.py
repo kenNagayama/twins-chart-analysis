@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import IO, Optional
 
 import pandas as pd
 
@@ -104,6 +104,67 @@ class DataLoader:
             message=f"必須列が不足しています: {cols_str}",
             missing_columns=missing,
         )
+
+    # ------------------------------------------------------------------
+    # 将来拡張: ファイルアップロード機能の拡張点（要件 7.1〜7.4）
+    # ------------------------------------------------------------------
+    # このメソッドを使うことで、既存の load(file_path) や下流のパイプライン
+    # コード（NoiseFilter, AnomalyDetector, Visualizer 等）を一切変更せずに
+    # Streamlit の st.file_uploader 経由のデータ読み込みを追加できる。
+    #
+    # 将来の統合イメージ（app.py に追加するだけでよい）:
+    #   uploaded = st.file_uploader("ファイルを選択", type=["xlsx"])
+    #   if uploaded is not None:
+    #       result = loader.load_from_upload(uploaded, uploaded.name)
+    #       # 以降は load() の戻り値と同じ型なので既存パイプラインをそのまま使用可能
+    # ------------------------------------------------------------------
+
+    def load_from_upload(self, file_obj: IO[bytes], filename: str) -> pd.DataFrame | LoadError:
+        """将来拡張: ファイルオブジェクトから Excel データを読み込む（要件 7.1〜7.4）。
+
+        ``st.file_uploader`` が返すファイルオブジェクトを受け付けられる拡張インターフェース。
+        戻り値の型は :meth:`load` と同一のため、既存パイプラインコードを変更せずに
+        アップロード機能を追加できる。
+
+        Args:
+            file_obj: 読み込むファイルオブジェクト（バイナリ）。
+                      ``st.file_uploader`` の戻り値や ``io.BytesIO`` を渡せる。
+            filename: ファイル名（拡張子検証に使用）。
+                      ``st.file_uploader`` では ``uploaded_file.name`` を渡す。
+
+        Returns:
+            成功時は必須列をすべて含む ``pd.DataFrame``。
+            エラー時は ``LoadError`` を返す（例外を送出しない）。
+
+            - ``kind="invalid_format"``: .xlsx 以外のファイル（要件 7.4）
+            - ``kind="read_error"``: Excel 解析エラー
+            - ``kind="missing_columns"``: 必須列が欠損（要件 7.2）
+        """
+        # 拡張子チェック: .xlsx 以外は非対応形式エラー（要件 7.4）
+        if not filename.lower().endswith(".xlsx"):
+            return LoadError(
+                kind="invalid_format",
+                message=(
+                    f"非対応のファイル形式です: {filename}。"
+                    ".xlsx ファイルを指定してください。"
+                ),
+            )
+
+        # Excel 読み込み（ファイルオブジェクトから直接）
+        try:
+            df = pd.read_excel(file_obj, engine="openpyxl")
+        except Exception as exc:
+            return LoadError(
+                kind="read_error",
+                message=f"ファイルの読み込みに失敗しました: {exc}",
+            )
+
+        # 列検証: load() と同一ロジックを再利用（要件 7.2）
+        validation_error = self.validate_columns(df)
+        if validation_error is not None:
+            return validation_error
+
+        return df
 
     def get_channel_group(self, df: pd.DataFrame, ch: int) -> pd.DataFrame:
         """CH 列の値でフィルタリングした DataFrame を返す。

@@ -1,6 +1,7 @@
-"""DataLoader のユニットテスト (タスク 2.1 / 2.2 / 2.3)"""
+"""DataLoader のユニットテスト (タスク 2.1 / 2.2 / 2.3 / 10.1)"""
 from __future__ import annotations
 
+import io
 import logging
 import os
 
@@ -308,3 +309,112 @@ class TestLoadErrorDataclass:
         cols = ["キロ程", "CH"]
         error = LoadError(kind="missing_columns", message="欠損あり", missing_columns=cols)
         assert error.missing_columns == cols
+
+
+# ---------------------------------------------------------------------------
+# タスク10.1: ファイルアップロード拡張点のスタブ（要件 7.1〜7.4）
+# ---------------------------------------------------------------------------
+
+
+def make_excel_bytes(df: pd.DataFrame) -> io.BytesIO:
+    """DataFrame を Excel バイト列として返すヘルパー。st.file_uploader の模擬用。"""
+    buf = io.BytesIO()
+    df.to_excel(buf, index=False)
+    buf.seek(0)
+    return buf
+
+
+class TestLoadFromUploadInvalidFormat:
+    """非 Excel ファイルの場合は LoadError(kind="invalid_format") を返す（要件 7.4）。"""
+
+    def test_csv_filename_returns_invalid_format_error(self) -> None:
+        loader = DataLoader()
+        fake_content = io.BytesIO(b"col1,col2\n1,2")
+        result = loader.load_from_upload(fake_content, "data.csv")
+
+        assert isinstance(result, LoadError)
+        assert result.kind == "invalid_format"
+
+    def test_txt_filename_returns_invalid_format_error(self) -> None:
+        loader = DataLoader()
+        fake_content = io.BytesIO(b"some text")
+        result = loader.load_from_upload(fake_content, "data.txt")
+
+        assert isinstance(result, LoadError)
+        assert result.kind == "invalid_format"
+
+    def test_invalid_format_message_mentions_xlsx(self) -> None:
+        loader = DataLoader()
+        fake_content = io.BytesIO(b"not excel")
+        result = loader.load_from_upload(fake_content, "data.csv")
+
+        assert isinstance(result, LoadError)
+        assert ".xlsx" in result.message
+
+    def test_non_excel_does_not_raise_exception(self) -> None:
+        """非 Excel ファイルでも例外を送出しない（要件 7.4 のエラーメッセージ表示）。"""
+        loader = DataLoader()
+        fake_content = io.BytesIO(b"not excel")
+        result = loader.load_from_upload(fake_content, "data.pdf")
+        assert result is not None
+
+    def test_uppercase_extension_rejected(self) -> None:
+        """.XLSX（大文字）は許可される（大文字小文字を区別しない）。"""
+        loader = DataLoader()
+        df = make_valid_df()
+        buf = make_excel_bytes(df)
+        result = loader.load_from_upload(buf, "DATA.XLSX")
+
+        # 大文字拡張子でも valid な Excel として処理される
+        assert not isinstance(result, LoadError) or result.kind != "invalid_format"
+
+
+class TestLoadFromUploadValidFile:
+    """有効な xlsx ファイルオブジェクトでは列検証まで実行される（要件 7.1〜7.3）。"""
+
+    def test_valid_xlsx_bytes_returns_dataframe(self) -> None:
+        loader = DataLoader()
+        df = make_valid_df()
+        buf = make_excel_bytes(df)
+        result = loader.load_from_upload(buf, "upload.xlsx")
+
+        assert isinstance(result, pd.DataFrame), (
+            f"全必須列を含む xlsx は DataFrame を返すべき。実際: {result}"
+        )
+
+    def test_valid_xlsx_result_has_required_columns(self) -> None:
+        loader = DataLoader()
+        df = make_valid_df()
+        buf = make_excel_bytes(df)
+        result = loader.load_from_upload(buf, "upload.xlsx")
+
+        assert isinstance(result, pd.DataFrame)
+        for col in REQUIRED_COLUMNS:
+            assert col in result.columns, f"結果 DataFrame に '{col}' が含まれるべき"
+
+    def test_missing_columns_in_upload_returns_load_error(self) -> None:
+        """アップロードファイルの列検証は load() と同一ロジック（要件 7.2）。"""
+        loader = DataLoader()
+        df = make_valid_df().drop(columns=["キロ程", "CH"])
+        buf = make_excel_bytes(df)
+        result = loader.load_from_upload(buf, "upload.xlsx")
+
+        assert isinstance(result, LoadError)
+        assert result.kind == "missing_columns"
+
+    def test_corrupt_excel_bytes_returns_read_error(self) -> None:
+        """破損した xlsx バイト列は read_error を返す。"""
+        loader = DataLoader()
+        corrupt_content = io.BytesIO(b"PK\x03\x04FAKE_CORRUPT_XLSX_CONTENT")
+        result = loader.load_from_upload(corrupt_content, "corrupt.xlsx")
+
+        assert isinstance(result, LoadError)
+        assert result.kind == "read_error"
+
+    def test_load_from_upload_does_not_raise_exception(self) -> None:
+        """例外が外部に送出されないことを確認する。"""
+        loader = DataLoader()
+        corrupt_content = io.BytesIO(b"DEFINITELY_NOT_EXCEL")
+        # .xlsx 拡張子でも破損データでも例外を送出しない
+        result = loader.load_from_upload(corrupt_content, "broken.xlsx")
+        assert result is not None
