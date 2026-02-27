@@ -71,18 +71,18 @@
 
 ---
 
-- [ ] 5. RMS・FFT・STFT信号解析機能の実装
-- [ ] 5.1 (P) スライドウィンドウRMSの実装
+- [x] 5. RMS・FFT・STFT信号解析機能の実装
+- [x] 5.1 (P) スライドウィンドウRMSの実装
   - pandas rolling の `apply` を用いて `sqrt(mean(x**2))` を各ウィンドウに適用するスライドウィンドウ RMS を実装する
   - ウィンドウ幅は ParameterValidator で検証済みの値を受け取る
   - _Requirements: 3.2_
 
-- [ ] 5.2 (P) FFTスペクトル算出の実装
+- [x] 5.2 (P) FFTスペクトル算出の実装
   - `numpy.fft.rfft` を使って指定ウィンドウ長の振幅スペクトルを計算する機能を実装する
   - 周波数軸は `rfftfreq(n, d=0.05)` で計算する（5cm = 0.05m ピッチ）
   - _Requirements: 3.3_
 
-- [ ] 5.3 (P) STFTスペクトログラム算出の実装
+- [x] 5.3 (P) STFTスペクトログラム算出の実装
   - `scipy.signal.stft` を `nperseg=window_size` として呼び出し、時間-周波数スペクトルを算出する機能を実装する
   - `noverlap=window_size//2` を基本設定とする
   - _Requirements: 3.4_
