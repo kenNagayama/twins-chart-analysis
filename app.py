@@ -146,25 +146,55 @@ savgol_enabled: bool = st.sidebar.toggle(
 # データ読み込み処理（サイドバーウィジェット定義の後に配置）
 # ─────────────────────────────────────────────
 
-# データの読み込み
-data_path = str(DEFAULT_DATA_PATH)
-df_or_error = load_data(data_path)
+if data_source == "アップロードファイルを使用":
+    # タスク 3.1: ファイル未選択時のガード処理
+    if uploaded_file is None:
+        st.info("分析ファイルを選択してください。サイドバーから .xlsx ファイルをアップロードしてください。")
+        st.stop()
 
-if isinstance(df_or_error, LoadError):
-    if df_or_error.kind == "file_not_found":
-        st.error(
-            f"データファイルが見つかりません: {data_path}\n\n"
-            "正しいパスを確認してください。"
-        )
-    elif df_or_error.kind == "missing_columns":
-        cols = ", ".join(df_or_error.missing_columns)
-        st.error(
-            f"必須列が不足しています: {cols}\n\n"
-            "データファイルの列構成を確認してください。"
-        )
-    else:
-        st.error(f"データ読み込みエラー: {df_or_error.message}")
-    st.stop()
+    # アップロードファイルを読み込む
+    df_or_error = load_uploaded_data(uploaded_file)
+
+    # タスク 3.2: LoadError の種別に応じたエラーメッセージ表示
+    if isinstance(df_or_error, LoadError):
+        if df_or_error.kind == "invalid_format":
+            st.error(
+                "非対応のファイル形式です。.xlsx ファイルを指定してください。"
+            )
+        elif df_or_error.kind == "missing_columns":
+            cols = ", ".join(df_or_error.missing_columns)
+            st.error(
+                f"必須列が不足しています: {cols}\n\n"
+                "データファイルの列構成を確認してください。"
+            )
+        elif df_or_error.kind == "read_error":
+            st.error(
+                f"ファイルの読み込みに失敗しました: {df_or_error.message}"
+            )
+        else:
+            st.error(f"データ読み込みエラー: {df_or_error.message}")
+        st.stop()
+
+else:
+    # デフォルトファイルを使用
+    data_path = str(DEFAULT_DATA_PATH)
+    df_or_error = load_data(data_path)
+
+    if isinstance(df_or_error, LoadError):
+        if df_or_error.kind == "file_not_found":
+            st.error(
+                f"データファイルが見つかりません: {data_path}\n\n"
+                "正しいパスを確認してください。"
+            )
+        elif df_or_error.kind == "missing_columns":
+            cols = ", ".join(df_or_error.missing_columns)
+            st.error(
+                f"必須列が不足しています: {cols}\n\n"
+                "データファイルの列構成を確認してください。"
+            )
+        else:
+            st.error(f"データ読み込みエラー: {df_or_error.message}")
+        st.stop()
 
 # 読み込み成功 - df_or_error は pd.DataFrame
 df = df_or_error
