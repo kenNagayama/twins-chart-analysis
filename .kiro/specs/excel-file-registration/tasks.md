@@ -44,7 +44,7 @@
   - アップロードファイル使用時はアップロードファイル名を、デフォルトファイル使用時は「デフォルトデータ」と示すテキストを、グラフ表示エリアの上部に表示する
   - _Requirements: 5.3_
 
-- [ ] 5. `load_uploaded_data` キャッシュ関数のユニットテストを実装する (P)
+- [x] 5. `load_uploaded_data` キャッシュ関数のユニットテストを実装する
   - 有効な xlsx ファイルオブジェクトを渡したとき DataFrame が返ることを検証する
   - 非 xlsx ファイルオブジェクトを渡したとき `LoadError(kind="invalid_format")` が返ることを検証する
   - 必須列が欠損したファイルオブジェクトを渡したとき `LoadError(kind="missing_columns")` が返ることを検証する

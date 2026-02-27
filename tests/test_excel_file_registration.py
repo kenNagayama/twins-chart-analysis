@@ -176,3 +176,102 @@ class TestLoadUploadedDataBehavior:
             assert isinstance(result, LoadError), "例外ではなく LoadError を返す必要があります"
         except Exception as e:
             pytest.fail(f"例外が発生しました（例外を送出しないべきです）: {e}")
+
+
+# ─────────────────────────────────────────────
+# タスク 5: デフォルト選択時の既定データファイルパス検証テスト
+# ─────────────────────────────────────────────
+
+
+class TestDefaultDataFilePath:
+    """デフォルト選択時に既定のデータファイルパスが使用されることを検証する（要件 1.6, 5.1）。"""
+
+    def test_default_data_path_constant_defined(self) -> None:
+        """app.py に DEFAULT_DATA_PATH 定数がモジュールレベルで定義されている（要件 1.6）。"""
+        source = read_app_source()
+        assert "DEFAULT_DATA_PATH" in source, (
+            "app.py に DEFAULT_DATA_PATH 定数が必要です（要件 1.6）"
+        )
+
+    def test_default_data_path_contains_correct_filename(self) -> None:
+        """DEFAULT_DATA_PATH が既定の Excel ファイル名を含む（要件 1.6）。"""
+        source = read_app_source()
+        assert "20220916-koga-st-5cm-original-data.xlsx" in source, (
+            "DEFAULT_DATA_PATH に '20220916-koga-st-5cm-original-data.xlsx' が"
+            "含まれている必要があります（要件 1.6）"
+        )
+
+    def test_default_branch_references_default_data_path(self) -> None:
+        """「デフォルトファイルを使用」ブランチ内で DEFAULT_DATA_PATH が参照される（要件 1.6, 5.1）。"""
+        source = read_app_source()
+        lines = source.split("\n")
+
+        # data_source == "アップロードファイルを使用" の if 分岐を探し、
+        # その else ブロック内で DEFAULT_DATA_PATH が参照されているか確認
+        found = False
+        for i, line in enumerate(lines):
+            if (
+                "アップロードファイルを使用" in line
+                and "if" in line
+                and "data_source" in line
+            ):
+                for j in range(i + 1, min(i + 120, len(lines))):
+                    if lines[j].strip() == "else:":
+                        else_block = "\n".join(lines[j : j + 30])
+                        if "DEFAULT_DATA_PATH" in else_block:
+                            found = True
+                        break
+
+        assert found, (
+            "「デフォルトファイルを使用」ブランチ（else 節）内で DEFAULT_DATA_PATH の参照が"
+            "必要です（要件 1.6, 5.1）"
+        )
+
+    def test_default_branch_calls_load_data(self) -> None:
+        """「デフォルトファイルを使用」ブランチ内で load_data() が呼び出される（要件 1.6, 5.1）。"""
+        source = read_app_source()
+        lines = source.split("\n")
+
+        found = False
+        for i, line in enumerate(lines):
+            if (
+                "アップロードファイルを使用" in line
+                and "if" in line
+                and "data_source" in line
+            ):
+                for j in range(i + 1, min(i + 120, len(lines))):
+                    if lines[j].strip() == "else:":
+                        else_block = "\n".join(lines[j : j + 30])
+                        if "load_data(" in else_block:
+                            found = True
+                        break
+
+        assert found, (
+            "「デフォルトファイルを使用」ブランチ（else 節）内で load_data() 呼び出しが"
+            "必要です（要件 1.6, 5.1）"
+        )
+
+    def test_default_branch_does_not_call_load_uploaded_data(self) -> None:
+        """「デフォルトファイルを使用」ブランチ内で load_uploaded_data は呼ばれない（要件 5.1）。"""
+        source = read_app_source()
+        lines = source.split("\n")
+
+        for i, line in enumerate(lines):
+            if (
+                "アップロードファイルを使用" in line
+                and "if" in line
+                and "data_source" in line
+            ):
+                for j in range(i + 1, min(i + 120, len(lines))):
+                    if lines[j].strip() == "else:":
+                        else_block = "\n".join(lines[j : j + 30])
+                        assert "load_uploaded_data(" not in else_block, (
+                            "「デフォルトファイルを使用」ブランチ内で load_uploaded_data を"
+                            "呼び出してはいけません（要件 5.1）"
+                        )
+                        return
+
+        # else ブロックが見つからない場合も検証として失敗させる
+        pytest.fail(
+            "data_source 条件分岐の else ブロックが app.py に見つかりません（要件 5.1）"
+        )
