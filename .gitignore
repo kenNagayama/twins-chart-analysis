@@ -27,5 +27,11 @@ __pycache__/
 
 # local
 local/
-data/
-output/
+
+# data: 計測ファイルは除外するがディレクトリ構造は保持
+data/*
+!data/.gitkeep
+
+# output: 生成ファイルは除外するがディレクトリ構造は保持
+output/*
+!output/.gitkeep

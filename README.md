@@ -26,6 +26,7 @@ Streamlit ベースの Web アプリとして動作し、ノイズフィルタ�
 | 機能 | 説明 |
 |------|------|
 | **データ読み込み・検証** | Excel（.xlsx）を読み込み、必須10列の存在を自動検証 |
+| **ファイルアップロード** | ブラウザから任意の .xlsx ファイルをアップロードして分析（サイドバーで切り替え） |
 | **CH 別摩耗チャート** | CH 1〜4 ごとのインタラクティブ摩耗チャート（ホバーで詳細属性を表示） |
 | **ノイズフィルタリング** | 移動中央値フィルタ・Savitzky-Golay フィルタを ON/OFF 切り替えで適用 |
 | **信号解析（RMS / FFT / STFT）** | スライドウィンドウによる統計処理で周波数特性とノイズパターンを探索 |
@@ -95,8 +96,18 @@ SageMaker Studio では自動的にプロキシ URL が割り当てられます�
 
 ### サイドバー（左側）
 
-起動後、左サイドバーに **分析パラメータ** が表示されます。
-パラメータを変更すると画面全体が自動的に再計算されます。
+起動後、左サイドバーに以下の UI が表示されます。パラメータを変更すると画面全体が自動的に再計算されます。
+
+#### データソース選択
+
+**「アップロードファイルを使用」** または **「デフォルトファイルを使用」** をラジオボタンで切り替えます。
+
+| 選択肢 | 動作 |
+|--------|------|
+| アップロードファイルを使用 | `.xlsx` ファイルのアップロードウィジェットが表示される。ファイル未選択時はガイドメッセージを表示 |
+| デフォルトファイルを使用 | `data/20220916-koga-st-5cm-original-data.xlsx` を自動で読み込む |
+
+#### 分析パラメータ
 
 ### メイン画面（各セクション）
 
@@ -197,7 +208,7 @@ uv run pytest tests/test_data_loader.py
 uv run pytest tests/test_anomaly_detector.py
 ```
 
-テストは 336 件あり、各コンポーネント（DataLoader, ParameterValidator, NoiseFilter, SignalAnalyzer, AnomalyDetector, Visualizer）のユニットテストとパイプライン統合テストを含みます。
+テストは 404 件あり、各コンポーネント（DataLoader, ParameterValidator, NoiseFilter, SignalAnalyzer, AnomalyDetector, Visualizer）のユニットテストとパイプライン統合テスト、ファイルアップロード機能テストを含みます。
 
 ---
 
@@ -237,20 +248,8 @@ output/                   # HTML 出力先
 
 ## 将来拡張
 
-### ファイルアップロード機能（拡張点あり）
+現時点では主要機能が実装済みです。今後の拡張候補として以下が考えられます。
 
-`DataLoader.load_from_upload()` メソッドが拡張スタブとして実装されています。
-`app.py` に数行追加するだけで、任意の Excel ファイルをブラウザからアップロードして分析できるようになります。
-
-```python
-# app.py への追加例（既存パイプラインコードの変更は不要）
-uploaded = st.file_uploader("ファイルを選択", type=["xlsx"])
-if uploaded is not None:
-    loader = DataLoader()
-    result = loader.load_from_upload(uploaded, uploaded.name)
-    # result は load() と同じ型（pd.DataFrame | LoadError）
-    # 以降の処理はそのまま使用可能
-```
-
-- `.xlsx` 以外のファイルはアップロード時に自動的にエラーメッセージが表示されます
-- 列検証も `load()` と同一ロジックで実行されます
+- **複数ファイル一括比較**: 複数の計測期間のデータを重ねて経年変化を可視化
+- **摩耗トレンド予測**: 回帰分析による残余寿命推定
+- **レポート自動生成**: 異常点一覧や統計サマリーを PDF／Excel 形式で出力
