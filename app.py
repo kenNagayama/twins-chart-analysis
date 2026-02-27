@@ -4,6 +4,9 @@
   - 8.1: サイドバーパラメータウィジェットの実装
   - 8.2: メイン画面へのグラフ描画統合
   - 8.3: 異常検知結果のグラフハイライト統合
+
+タスク 1: サイドバーにデータソース選択 UI を追加する
+  - 1.1: データソース選択ラジオボタンとファイルアップロードウィジェットをサイドバーに配置する
 """
 from __future__ import annotations
 
@@ -58,44 +61,41 @@ def load_data(file_path: str):
     return loader.load(file_path)
 
 
-# データの読み込み
-data_path = str(DEFAULT_DATA_PATH)
-df_or_error = load_data(data_path)
+# ─────────────────────────────────────────────
+# タスク 1.1: サイドバー UI 定義（データ取得より前に配置）
+# ─────────────────────────────────────────────
 
-if isinstance(df_or_error, LoadError):
-    if df_or_error.kind == "file_not_found":
-        st.error(
-            f"データファイルが見つかりません: {data_path}\n\n"
-            "正しいパスを確認してください。"
-        )
-    elif df_or_error.kind == "missing_columns":
-        cols = ", ".join(df_or_error.missing_columns)
-        st.error(
-            f"必須列が不足しています: {cols}\n\n"
-            "データファイルの列構成を確認してください。"
-        )
-    else:
-        st.error(f"データ読み込みエラー: {df_or_error.message}")
-    st.stop()
+# ── データソース選択セクション ──────────────────────
+st.sidebar.header("データソース選択")
 
-# 読み込み成功 - df_or_error は pd.DataFrame
-df = df_or_error
+data_source: str = st.sidebar.radio(
+    "データソースを選択してください",
+    options=["アップロードファイルを使用", "デフォルトファイルを使用"],
+    index=0,
+)
+
+# アップロードファイルを使用が選択されているときのみファイルアップロードウィジェットを表示
+if data_source == "アップロードファイルを使用":
+    uploaded_file = st.sidebar.file_uploader(
+        "分析ファイルを選択（.xlsx）",
+        type=["xlsx"],
+    )
+else:
+    uploaded_file = None
 
 # ─────────────────────────────────────────────
 # タスク 8.1: サイドバーパラメータウィジェットの実装
+# （データ取得より前に配置: 要件 1.6 / 4.4）
 # ─────────────────────────────────────────────
 
 st.sidebar.header("分析パラメータ")
 
-# データ全体の長さ（スライダーの最大値に使用）
-total_data_length = len(df)
-
-# ウィンドウ幅スライダー
+# ウィンドウ幅スライダー（上限は 500 固定: データ取得前のため）
 window_size_input: int = st.sidebar.slider(
     "ウィンドウ幅",
     min_value=1,
-    max_value=min(total_data_length, 500),
-    value=min(51, total_data_length),
+    max_value=500,
+    value=51,
     step=1,
     help="移動中央値・Savitzky-Golay・RMS・Z-Score算出に使用するウィンドウ幅",
 )
@@ -124,6 +124,36 @@ savgol_enabled: bool = st.sidebar.toggle(
     value=True,
     help="Savitzky-Golay フィルタで滑らかな曲線を生成します",
 )
+
+# ─────────────────────────────────────────────
+# データ読み込み処理（サイドバーウィジェット定義の後に配置）
+# ─────────────────────────────────────────────
+
+# データの読み込み
+data_path = str(DEFAULT_DATA_PATH)
+df_or_error = load_data(data_path)
+
+if isinstance(df_or_error, LoadError):
+    if df_or_error.kind == "file_not_found":
+        st.error(
+            f"データファイルが見つかりません: {data_path}\n\n"
+            "正しいパスを確認してください。"
+        )
+    elif df_or_error.kind == "missing_columns":
+        cols = ", ".join(df_or_error.missing_columns)
+        st.error(
+            f"必須列が不足しています: {cols}\n\n"
+            "データファイルの列構成を確認してください。"
+        )
+    else:
+        st.error(f"データ読み込みエラー: {df_or_error.message}")
+    st.stop()
+
+# 読み込み成功 - df_or_error は pd.DataFrame
+df = df_or_error
+
+# データ全体の長さ（バリデーションに使用）
+total_data_length = len(df)
 
 # ─────────────────────────────────────────────
 # パラメータバリデーション
